@@ -5,14 +5,10 @@
  */
 package dndgui;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.*;
+import java.nio.file.*;
 import java.sql.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.logging.*;
 
 /**
  *
@@ -20,6 +16,17 @@ import java.util.logging.Logger;
  */
 public class sqliteDB
 {
+    static Connection connect() {
+        // SQLite connection string
+        String url = "jdbc:sqlite:C:/DnD/db/dnd.db";
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(url);
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+        return conn;
+    }
   static void createDirectory(String location)
    {
        Path path = Paths.get(location);
@@ -36,9 +43,10 @@ public class sqliteDB
    }
    public static void createNewDatabase(String db) {
 
-        String url = "jdbc:sqlite:C:/DnD/db/" + db;
+        //String url = "jdbc:sqlite:C:/DnD/db/" + db;
 
-        try (Connection conn = DriverManager.getConnection(url)) {
+        //try (Connection conn = DriverManager.getConnection(url)) {
+        try (Connection conn = sqliteDB.connect()) {
             if (conn != null) {
                 DatabaseMetaData meta = conn.getMetaData();
             }
@@ -47,8 +55,22 @@ public class sqliteDB
             System.out.println(e.getMessage());
         }
     }
+   public static void writeMonstersImage(byte[] image, String selected)
+   {
+        String sql = "Update Monsters SET monsterCard = ? where name = ?";
+        try (Connection conn = sqliteDB.connect();
+            PreparedStatement pstmt = conn.prepareStatement(sql))
+        {
+            pstmt.setBytes(1, image);
+            pstmt.setString(2, selected);
+            pstmt.executeUpdate();
+        }
+        catch (SQLException e)
+        {
+            System.out.println(e.getMessage());
+        }  
+   }
    public static void createNewMonsterTable(String table){
-       String url = "jdbc:sqlite:C:/DnD/db/dnd.db";
        String sql = "CREATE TABLE IF NOT EXISTS " +table+" (\n"
                + "	Name text NOT NULL,\n"
                + "      Health integer, \n"
@@ -58,7 +80,7 @@ public class sqliteDB
                + "	Intelligence text,\n"
                + "	Wisdom text,\n"
                + "	Charisma text,\n"
-               + "	capacity real\n"
+               + "	monsterCard BLOB\n"
                 + ");";
         try (Connection conn = sqliteDB.connect();
                PreparedStatement pstmt = conn.prepareStatement(sql))
@@ -70,7 +92,6 @@ public class sqliteDB
         }
     }
   public static void createPlayerTable(String table){
-       String url = "jdbc:sqlite:C:/DnD/db/dnd.db";
        String sql = "CREATE TABLE IF NOT EXISTS " +table+" (\n"
                + "	Name text NOT NULL,\n"
                + "      Health integer, \n"
@@ -95,7 +116,6 @@ public class sqliteDB
 
 
  public static void createNewInitiativeTable(String table){
-       //String url = "jdbc:sqlite:C:/DnD/db/dnd.db";
        String sql = "CREATE TABLE IF NOT EXISTS " +table+" (\n"
                + "	Name text NOT NULL);";
         try (Connection conn = sqliteDB.connect();
@@ -108,7 +128,6 @@ public class sqliteDB
         }
     }
   public static void createNewSpellTable(String table){
-       String url = "jdbc:sqlite:C:/DnD/db/dnd.db";
        String sql = "CREATE TABLE IF NOT EXISTS " +table+" (\n"
                + "	Name text);";
         try (Connection conn = sqliteDB.connect();
@@ -121,7 +140,6 @@ public class sqliteDB
         }
     }
   public static void createNewNotesTable(String table){
-       String url = "jdbc:sqlite:C:/DnD/db/dnd.db";
        String sql = "CREATE TABLE IF NOT EXISTS " +table+" (id integer PRIMARY KEY AUTOINCREMENT, notes text);";
         try (Connection conn = sqliteDB.connect();
                PreparedStatement pstmt = conn.prepareStatement(sql))
@@ -145,21 +163,11 @@ public class sqliteDB
             System.out.println(e.getMessage());
         }
     }
-    static Connection connect() {
-        // SQLite connection string
-        String url = "jdbc:sqlite:C:/DnD/db/dnd.db";
-        Connection conn = null;
-        try {
-            conn = DriverManager.getConnection(url);
-        } catch (SQLException e) {
-            System.out.println(e.getMessage());
-        }
-        return conn;
-    }
+
     
-   static void insertMonsters(String name, String health, String strength, String dex, String con, String intel, String wis, String charisma)
+   static void insertMonsters(String name, String health, String strength, String dex, String con, String intel, String wis, String charisma, String monsterCard)
    {
-       String sql = "INSERT INTO Monsters (name, health, strength, dexterity, constitution, intelligence, wisdom, charisma) VALUES(?, ?, ?, ?, ?, ?, ?, ?)";
+       String sql = "INSERT INTO Monsters (name, health, strength, dexterity, constitution, intelligence, wisdom, charisma, monsterCard) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)";
        
        try (Connection conn = sqliteDB.connect();
                PreparedStatement pstmt = conn.prepareStatement(sql))
@@ -172,6 +180,7 @@ public class sqliteDB
            pstmt.setString(6, intel);
            pstmt.setString(7, wis);
            pstmt.setString(8, charisma);
+           pstmt.setString(9, monsterCard);
            pstmt.executeUpdate();
        }
        catch (SQLException e) {
